@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t austinchappell/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run austinchappell/react-test yarn test -e CI=true -- --coverage
+
+after_success:
+  - docker build -t austinchappell/multi-client ./client
+  - docker build -t austinchappell/multi-nginx ./nginx
+  - docker build -t austinchappell/multi-server ./server
+  - docker build -t austinchappell/multi-worker ./worker
+
+  # Login to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push austinchappell/multi-client
+  - docker push austinchappell/multi-nginx
+  - docker push austinchappell/multi-server
+  - docker push austinchappell/multi-worker
